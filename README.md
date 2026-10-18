@@ -69,6 +69,15 @@ Package sets are curated, not a dump of `pacman -Qqe`:
 6. **Shell.** `chsh -s /usr/bin/zsh`. oh-my-zsh and the `zsh-autosuggestions`
    and `zsh-syntax-highlighting` plugins are cloned by `install.sh` automatically.
 
+### Make it yours
+
+- Set your git identity in `~/.gitconfig.local` (`name` / `email`) — `install.sh`
+  creates it from a template and it is never committed.
+- Set your monitor output in `config/niri/config.kdl`.
+- Make sure `codebase-memory-mcp` is on `PATH` — `config/opencode/` calls it by name.
+- Point the Noctalia wallpaper directory (`config/noctalia/config.toml`) at your
+  own folder if `~/Pictures/Wallpapers` is not where yours live.
+
 ## Deliberately excluded
 
 - Monitor outputs, wallpaper files, and Noctalia notification/clipboard history
