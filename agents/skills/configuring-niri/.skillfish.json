@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "configuring-niri",
+  "owner": "seanedwards",
+  "repo": "ai-dotfiles",
+  "path": "niri/skills/configuring-niri",
+  "branch": "main",
+  "sha": "6bd1996188039d8ddf78d1451fc573e501ec0aa3",
+  "source": "manual"
+}

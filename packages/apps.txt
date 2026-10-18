@@ -1,0 +1,10 @@
+# Day-to-day applications used on this machine (official repos only).
+firefox
+mpv
+mpv-mpris
+neovim
+vlc
+inkscape
+discord
+steam
+steam-devices

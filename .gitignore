@@ -1,0 +1,20 @@
+# Safety net: never commit secrets, machine-local state, or vendored trees.
+node_modules/
+scripts/wallpapers.personal.txt
+wallpapers/
+credentials.json
+notification_history.json
+notification_history_assets/
+clipboard/
+.bash_history
+.zsh_history
+.zcompdump*
+*.bak
+*.backup*
+*.disabled-*
+*backup*
+.ssh/
+.gnupg/
+.config/gh/
+.local/state/
+.cache/

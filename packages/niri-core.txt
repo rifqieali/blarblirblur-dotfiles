@@ -1,0 +1,34 @@
+# Core of the Niri + Noctalia rice (official repos only).
+# Installed with: sudo pacman -S --needed - < packages/niri-core.txt
+niri
+noctalia
+kitty
+xwayland-satellite
+xdg-desktop-portal-gnome
+polkit-gnome
+sddm
+zsh
+fuzzel
+cliphist
+wl-clipboard
+slurp
+grim
+swappy
+cava
+fastfetch
+starship
+lsd
+fzf
+btop
+zathura
+zathura-pdf-mupdf
+pipewire
+pipewire-pulse
+wireplumber
+kvantum
+qt5ct
+qt6ct
+zenity
+xdg-utils
+ttf-jetbrains-mono-nerd
+noto-fonts-emoji

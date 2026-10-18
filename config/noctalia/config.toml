@@ -1,0 +1,99 @@
+# Noctalia v5 — glassy look (adaptasi dari RanXom/glassy-niri v4)
+# Referensi desain: palet #b6c7e7 / surface #131315, translucent + blur behind,
+# radius 12, bar top tipis, font JetBrainsMono Nerd Font.
+
+[theme]
+mode   = "dark"
+source = "builtin"
+builtin = "Tokyo-Night"
+
+[theme.templates]
+enable_builtin_templates   = true
+builtin_ids                = ["niri", "kitty", "starship"]
+enable_community_templates = false
+
+[accessibility]
+ui_scale = 1.0
+
+[shell]
+font_family           = "JetBrainsMono Nerd Font"
+corner_radius_scale   = 1.0
+settings_window_translucent = true
+polkit_agent          = false   # tetap pakai polkit-gnome yang sudah berjalan
+telemetry_enabled     = false
+
+[shell.shadow]
+direction = "down"
+alpha     = 0.55
+
+[shell.panel]
+transparency_mode        = "glass"
+borders                  = true
+shadow                   = true
+launcher_placement       = "floating"
+clipboard_placement      = "floating"
+control_center_placement = "attached"
+wallpaper_placement      = "attached"
+session_placement        = "attached"
+
+[shell.animation]
+enabled = true
+speed   = 1.0
+
+[bar.main]
+position           = "top"
+thickness          = 34
+radius             = 12
+background_opacity = 0.0
+compositor_blur    = true
+capsule            = true
+capsule_fill       = "surface_variant"
+capsule_opacity    = 0.95
+margin_ends        = 12
+margin_edge        = 8
+padding            = 14
+widget_spacing     = 6
+font_scale         = 1.0
+shadow             = true
+reserve_space      = true
+start  = ["launcher", "workspaces", "sysmon"]
+center = ["clock"]
+end    = ["tray", "volume", "brightness", "battery", "notifications", "control-center"]
+
+[wallpaper]
+enabled             = true
+directory           = "/home/rifqieali/Pictures/Wallpapers"
+fill_mode           = "crop"
+transition          = ["fade"]
+transition_duration = 1500
+edge_smoothness     = 0.3
+
+[backdrop]
+enabled        = false   # Option 2: stationary wallpaper (no blurred backdrop)
+blur_intensity = 0.5
+tint_intensity = 0.3
+
+[lockscreen]
+enabled              = true
+blur_intensity       = 0.5
+tint_intensity       = 0.3
+blurred_desktop      = false
+transition           = ["fade"]
+transition_duration  = 1500
+
+[notification]
+enable_daemon      = true
+background_opacity = 0.97
+border             = true
+border_color       = "outline"
+scale              = 1.0
+
+[osd]
+background_opacity = 0.97
+border             = true
+
+[system.monitor]
+enabled = true
+
+[audio]
+enable_overdrive = true
