@@ -9,6 +9,6 @@
         "Authorization": "Bearer {env:CONTEXT7_API_KEY}"
       }
     },
-    "codebase-memory-mcp": {"command":["/home/rifqieali/.local/bin/codebase-memory-mcp"],"type":"local"}
+    "codebase-memory-mcp": {"command":["codebase-memory-mcp"],"type":"local"}
   }
 }

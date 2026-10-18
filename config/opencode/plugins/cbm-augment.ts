@@ -8,7 +8,7 @@
 // through their own hook configuration.
 import { spawn } from 'node:child_process';
 
-const BIN = '/home/rifqieali/.local/bin/codebase-memory-mcp';
+const BIN = process.env.CBM_BIN ?? `${process.env.HOME}/.local/bin/codebase-memory-mcp`;
 
 function augment(tool, args) {
   return new Promise((resolve) => {
