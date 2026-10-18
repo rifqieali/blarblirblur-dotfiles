@@ -10,27 +10,26 @@ Layout mirrors `$HOME` so restoring is a copy, not a puzzle:
 | `config/` | `~/.config/` |
 | `home/` | `~/` (`.zshrc`, `.zshenv`, `.zprofile`, `.gitconfig`, `.Xresources`) |
 | `state/` | `~/.local/state/` (Noctalia `settings.toml`, `state.toml`, `wallpaper_shuffle.json`) |
-| `agents/` | `~/.agents/` |
 | `themes/` | `~/.themes/` |
 
 ## What's inside
 
-- **Niri**: `config.kdl` + `noctalia.kdl` + `monitor.kdl`, a `dms/` module set and `Keybinds.conf`
+- **Niri**: `config.kdl` + `noctalia.kdl` + `monitor.kdl`
 - **Noctalia**: shell config (`config.toml`) and restorable state
 - **Terminal / TUI**: `kitty/`, `btop/`, `fastfetch/`, `zathura/`, `starship.toml`, `fontconfig/`
 - **Toolkit theming**: `gtk-3.0/`, `gtk-4.0/`, `Kvantum/`, `qt5ct/`, `qt6ct/`, `themes/Flat-Remix-*`
 - **Xdg glue**: portals conf, `mimeapps.list`, `user-dirs.dirs`, `xdg-terminals.list`
 - **Shell + git**: `home/.zshrc` and friends (oh-my-zsh based)
-- **AI tooling**: `config/opencode/` (no `node_modules`), `agents/`
+- **AI tooling**: `config/opencode/` (no `node_modules`)
 - `config/systemd/user/hermes-gateway.service` (paths use the `%h` specifier)
 
 Verified before every push: no credentials, no history, no machine state.
 
 ## Requirements
 
-Arch / CachyOS, `base-devel`, and a Wayland-capable GPU. This setup assumes
-`niri` **≥ 25.x** with blur support; on a distro without a bleeding-edge repo
-install `niri-git` instead.
+Arch / CachyOS, `base-devel`, and a Wayland-capable GPU. This setup needs
+`niri` **≥ 25.08** for `background-effect` (blur), which is stable in
+**26.04**; on a distro without a bleeding-edge repo install `niri-git` instead.
 
 Fonts come from packages, never from files: `ttf-jetbrains-mono-nerd`,
 `noto-fonts-emoji`, `otf-space-grotesk`.
@@ -41,11 +40,11 @@ Fonts come from packages, never from files: `ttf-jetbrains-mono-nerd`,
 git clone https://github.com/rifqieali/blarblirblur-dotfiles ~/dotfiles
 cd ~/dotfiles
 ./install.sh --dry-run     # see exactly what would be touched
-./install.sh               # packages, then configs (asks before overwriting)
+./install.sh               # packages, then configs (prompts before overwriting)
 ```
 
-`install.sh` backs up any file it would overwrite into
-`~/.dotfiles-backup-<timestamp>/`. Flags: `--dry-run`, `--no-packages`, `--force`.
+`install.sh` prompts before overwriting when interactive; otherwise it backs
+up to `~/.dotfiles-backup-<ts>` and overwrites. Flags: `--dry-run`, `--no-packages`, `--force`.
 
 Package sets are curated, not a dump of `pacman -Qqe`:
 
@@ -67,7 +66,8 @@ Package sets are curated, not a dump of `pacman -Qqe`:
 5. **Credentials — none live here.** Recreate them: `gh auth login`, a fresh
    SSH key, `opencode auth login`, and `export CONTEXT7_API_KEY=...` for the
    Context7 MCP header.
-6. **Shell.** `chsh -s /usr/bin/zsh`.
+6. **Shell.** `chsh -s /usr/bin/zsh`. oh-my-zsh and the `zsh-autosuggestions`
+   and `zsh-syntax-highlighting` plugins are cloned by `install.sh` automatically.
 
 ## Deliberately excluded
 
