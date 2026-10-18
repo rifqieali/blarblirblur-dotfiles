@@ -20,7 +20,7 @@ plugins=(
     dirhistory
 )
 
-source $ZSH/oh-my-zsh.sh
+[ -f "$ZSH/oh-my-zsh.sh" ] && source "$ZSH/oh-my-zsh.sh"
 
 # Check archlinux plugin commands here
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/archlinux
@@ -49,7 +49,7 @@ SAVEHIST=10000
 setopt appendhistory
 
 # opencode
-export PATH=/home/rifqieali/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
 
 # Added by cua-driver-rs installer — see https://github.com/trycua/cua
 export PATH="/home/rifqieali/.local/bin:$PATH"
