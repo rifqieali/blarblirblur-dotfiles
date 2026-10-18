@@ -37,7 +37,7 @@ Fonts come from packages, never from files: `ttf-jetbrains-mono-nerd`,
 ## Install
 
 ```bash
-git clone https://github.com/rifqieali/blarblirblur-dotfiles ~/dotfiles
+git clone <this-repo-url> ~/dotfiles
 cd ~/dotfiles
 ./install.sh --dry-run     # see exactly what would be touched
 ./install.sh               # packages, then configs (prompts before overwriting)
