@@ -62,7 +62,7 @@ end    = ["tray", "volume", "brightness", "battery", "notifications", "control-c
 
 [wallpaper]
 enabled             = true
-directory           = "/home/rifqieali/Pictures/Wallpapers"
+directory           = "~/Pictures/Wallpapers"
 fill_mode           = "crop"
 transition          = ["fade"]
 transition_duration = 1500
