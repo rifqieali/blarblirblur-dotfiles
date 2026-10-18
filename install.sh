@@ -86,6 +86,18 @@ ZC="$HOME/.oh-my-zsh/custom/plugins"
 [[ -d "$ZC/zsh-autosuggestions" ]] || run git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZC/zsh-autosuggestions"
 [[ -d "$ZC/zsh-syntax-highlighting" ]] || run git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZC/zsh-syntax-highlighting"
 
+log "==> git identity"
+GCL="$HOME/.gitconfig.local"
+if [[ ! -f "$GCL" ]]; then
+  printf -v GCL_TEMPLATE '# Isi identitas git kamu (jangan di-commit)\n[user]\n\tname =\n\temail =\n'
+  if (( DRY_RUN )); then
+    log "  [dry-run] create $GCL (name/email template)"
+  else
+    printf '%s' "$GCL_TEMPLATE" > "$GCL"
+    log "   created $GCL — fill in name/email"
+  fi
+fi
+
 copy_tree "$REPO_DIR/config" "$HOME/.config"
 copy_tree "$REPO_DIR/home"   "$HOME"
 copy_tree "$REPO_DIR/state"  "$HOME/.local/state"

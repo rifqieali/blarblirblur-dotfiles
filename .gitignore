@@ -3,6 +3,7 @@ node_modules/
 wallpapers/
 scripts/wallpapers.personal.txt
 credentials.json
+**/.gitconfig.local
 **/notification_history.json
 **/notification_history_assets/
 **/clipboard/
