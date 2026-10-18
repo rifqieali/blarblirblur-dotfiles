@@ -11,7 +11,6 @@
 #   config/      -> ~/.config/
 #   home/        -> ~/            (dotfiles)
 #   state/       -> ~/.local/state/
-#   agents/      -> ~/.agents/
 #   themes/      -> ~/.themes/
 
 set -euo pipefail
@@ -61,24 +60,35 @@ copy_tree() {
   done
 }
 
+# read_pkgs <file> : package names, comments and blank lines stripped out
+read_pkgs() { grep -vE '^[[:space:]]*(#|$)' "$1" || true; }
+
 if (( INSTALL_PACKAGES )); then
   log "==> Packages (official repos)"
-  run sudo pacman -S --needed - < "$REPO_DIR/packages/niri-core.txt"
-  run sudo pacman -S --needed - < "$REPO_DIR/packages/apps.txt"
+  mapfile -t core < <(read_pkgs "$REPO_DIR/packages/niri-core.txt")
+  if (( ${#core[@]} )); then run sudo pacman -S --needed "${core[@]}"; fi
+  mapfile -t apps < <(read_pkgs "$REPO_DIR/packages/apps.txt")
+  if (( ${#apps[@]} )); then run sudo pacman -S --needed "${apps[@]}"; fi
 
   if command -v yay >/dev/null 2>&1; then
     log "==> Packages (AUR)"
-    run yay -S --needed - < "$REPO_DIR/packages/aur.txt"
+    mapfile -t aur < <(read_pkgs "$REPO_DIR/packages/aur.txt")
+    if (( ${#aur[@]} )); then run yay -S --needed "${aur[@]}"; fi
   else
     log "!! yay not found — install it and then run:"
     log "   yay -S --needed - < $REPO_DIR/packages/aur.txt"
   fi
 fi
 
+log "==> oh-my-zsh + plugins"
+[[ -d "$HOME/.oh-my-zsh" ]] || run git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+ZC="$HOME/.oh-my-zsh/custom/plugins"
+[[ -d "$ZC/zsh-autosuggestions" ]] || run git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZC/zsh-autosuggestions"
+[[ -d "$ZC/zsh-syntax-highlighting" ]] || run git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZC/zsh-syntax-highlighting"
+
 copy_tree "$REPO_DIR/config" "$HOME/.config"
 copy_tree "$REPO_DIR/home"   "$HOME"
 copy_tree "$REPO_DIR/state"  "$HOME/.local/state"
-copy_tree "$REPO_DIR/agents" "$HOME/.agents"
 copy_tree "$REPO_DIR/themes" "$HOME/.themes"
 
 if [[ -d "$BACKUP_DIR" ]]; then
