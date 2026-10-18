@@ -57,13 +57,13 @@ source = "builtin"
 wallpaper_scheme = "m3-content"
 
 [wallpaper.default]
-path = "/home/rifqieali/Pictures/Wallpapers/10.png"
+path = "~/Pictures/Wallpapers/10.png"
 
 [wallpaper.last]
-path = "/home/rifqieali/Pictures/Wallpapers/10.png"
+path = "~/Pictures/Wallpapers/10.png"
 
 [wallpaper.monitors.eDP-1]
-path = "/home/rifqieali/Pictures/Wallpapers/10.png"
+path = "~/Pictures/Wallpapers/10.png"
 
 [widget.tray]
 detached_panel = true

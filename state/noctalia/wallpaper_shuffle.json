@@ -1,8 +1,8 @@
 {
   "scopes": {
     "global": {
-      "/home/rifqieali/Pictures/Wallpapers": [
-        "/home/rifqieali/Pictures/Wallpapers/random_wallpaper-1.jpg"
+      "~/Pictures/Wallpapers": [
+        "~/Pictures/Wallpapers/random_wallpaper-1.jpg"
       ]
     }
   },
