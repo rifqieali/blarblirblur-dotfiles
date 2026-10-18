@@ -14,7 +14,7 @@ Layout mirrors `$HOME` so restoring is a copy, not a puzzle:
 
 ## What's inside
 
-- **Niri**: `config.kdl` + `noctalia.kdl` + `monitor.kdl`
+- **Niri**: `config.kdl` + `noctalia.kdl`
 - **Noctalia**: shell config (`config.toml`) and restorable state
 - **Terminal / TUI**: `kitty/`, `btop/`, `fastfetch/`, `zathura/`, `starship.toml`, `fontconfig/`
 - **Toolkit theming**: `gtk-3.0/`, `gtk-4.0/`, `Kvantum/`, `qt5ct/`, `qt6ct/`, `themes/Flat-Remix-*`
@@ -55,8 +55,7 @@ Package sets are curated, not a dump of `pacman -Qqe`:
 ## After install (manual, by design)
 
 1. **Monitors.** Open `~/.config/niri/config.kdl` and set your output name,
-   mode and scale. `monitor.kdl` here is this machine's layout only — a note,
-   not a promise.
+   mode and scale.
 2. **Display manager.** `sudo systemctl enable --now sddm`.
 3. **Session services.** `systemctl --user enable --now pipewire wireplumber`,
    then re-login so portals and `xwayland-satellite` pick up the session.
