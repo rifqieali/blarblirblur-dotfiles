@@ -1,0 +1,13 @@
+[Unit]
+Description=Automount USB partition /dev/%i
+Documentation=file:/etc/usb-automount.conf
+BindsTo=dev-%i.device
+After=dev-%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=45
+TimeoutStopSec=20
+ExecStart=/usr/local/bin/usb-automount add /dev/%i
+ExecStop=/usr/local/bin/usb-automount remove /dev/%i

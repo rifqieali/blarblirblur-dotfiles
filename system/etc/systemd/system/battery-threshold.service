@@ -1,0 +1,12 @@
+[Unit]
+Description=Set batas charge baterai ThinkPad dari /etc/battery-threshold.conf
+After=multi-user.target
+ConditionPathExists=/sys/class/power_supply/BAT0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/battery-threshold
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Daemon kecil: jadikan profil PPD sebagai sumber kebenaran,
+# lalu terapkan kebijakan hardware dan auto-switch saat AC dicabut/dicolok.
+set -u
+
+IFACE=org.freedesktop.UPower.PowerProfiles
+OBJ=/org/freedesktop/UPower/PowerProfiles
+AC=/sys/class/power_supply/AC/online
+STATE=/run/power-policy
+
+mkdir -p "$STATE"
+
+get_profile() {
+  busctl --system get-property "$IFACE" "$OBJ" "$IFACE" ActiveProfile 2>/dev/null \
+    | sed -nE 's/^s "(.*)"$/\1/p'
+}
+
+set_profile() {
+  busctl --system set-property "$IFACE" "$OBJ" "$IFACE" ActiveProfile s "$1" \
+    >/dev/null 2>&1
+}
+
+last_ac=""
+last_profile=""
+
+# Terapkan sekali di awal (kalau PPD belum siap, loop akan menyusul).
+while :; do
+  ac="$(cat "$AC" 2>/dev/null || echo 1)"
+  p="$(get_profile)"
+
+  # Selama dicolok, balanced wajib. Profil yang nyangkut di power-saver
+  # (toggle manual, sisa sesi baterai, atau PPD telat siap) dipulihkan.
+  if [[ "$ac" == "1" && -n "$p" && "$p" != "balanced" ]]; then
+    set_profile balanced
+    p=balanced
+    logger -t power-policy -- "AC dicolok: profil dipulihkan ke balanced"
+  fi
+
+  # Cabut charger -> power-saver.
+  if [[ "$ac" != "$last_ac" ]]; then
+    if [[ "$ac" != "1" ]]; then
+      set_profile power-saver
+      p=power-saver
+    fi
+    last_ac="$ac"
+  fi
+
+  if [[ -n "$p" && "$p" != "$last_profile" ]]; then
+    /usr/local/bin/power-apply "$p" || true
+    printf '%s\n' "$p" > "$STATE/profile"
+    last_profile="$p"
+    logger -t power-policy -- "profil=$p ac=$ac diterapkan"
+  fi
+
+  sleep 2
+done

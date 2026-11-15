@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Lepas mount HP dan hapus symlink ~/hp.
+set -u
+
+if [[ ${EUID:-0} -eq 0 ]]; then
+  echo "Jalankan sebagai user biasa (tanpa sudo)." >&2
+  exit 1
+fi
+
+LINK="$HOME/hp"
+[[ -L "$LINK" ]] || LINK="$HOME/hp-mtp"
+[[ -L "$LINK" ]] || { echo "Tidak ada symlink $HOME/hp."; exit 0; }
+
+TARGET="$(readlink -f "$LINK" 2>/dev/null || true)"
+if [[ -n "$TARGET" ]]; then
+  fusermount -u "$TARGET" 2>/dev/null \
+    || gio mount -u "$TARGET" 2>/dev/null \
+    || true
+fi
+rm -f "$LINK"
+echo "Dilepas: $LINK"

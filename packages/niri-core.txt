@@ -3,7 +3,9 @@
 niri
 noctalia
 kitty
+alacritty
 xwayland-satellite
+xorg-xwayland
 xdg-desktop-portal-gnome
 polkit-gnome
 sddm
@@ -13,6 +15,7 @@ cliphist
 wl-clipboard
 slurp
 grim
+wl-mirror
 swappy
 cava
 fastfetch

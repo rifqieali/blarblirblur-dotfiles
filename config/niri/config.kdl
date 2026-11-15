@@ -1,4 +1,5 @@
-// Glassy-niri (Noctalia v5) — adaptasi RanXom/glassy-niri untuk eDP-1 1366x768 + HDMI-A-1 1920x1080.
+// Glassy-niri (Noctalia v5) — adaptasi https://github.com/RanXom/glassy-niri
+// untuk eDP-1 1920x1080 (laptop, single panel).
 // Keybind dipertahankan; aksi shell diarahkan ke Noctalia v5.
 
 prefer-no-csd
@@ -21,15 +22,16 @@ debug {
 
 // ============================ OUTPUTS ============================
 output "eDP-1" {
-    mode "1366x768@60.003"
+    mode "1920x1080@60.049"
     scale 1.0
     position x=0 y=0
 }
 
+// External monitor (optional). Only applies when an HDMI display is connected.
 output "HDMI-A-1" {
     mode "1920x1080"
     scale 1.0
-    position x=1366 y=0
+    position x=1920 y=0
 }
 
 // ============================ INPUT ============================
@@ -217,7 +219,7 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Noctalia v5 shell
-    Mod+S    hotkey-overlay-title="Application Launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
+    Mod+S    hotkey-overlay-title="Application Launcher" { spawn-sh "command -v noctalia >/dev/null 2>&1 && noctalia msg panel-toggle launcher || exec fuzzel"; }
     Mod+M    hotkey-overlay-title="Control Center"       { spawn-sh "noctalia msg panel-toggle control-center"; }
     Mod+N    hotkey-overlay-title="Notifications"        { spawn-sh "noctalia msg panel-toggle control-center notifications"; }
     Mod+W    hotkey-overlay-title="Wallpapers"           { spawn-sh "noctalia msg panel-toggle wallpaper"; }
@@ -242,10 +244,13 @@ binds {
     XF86AudioPrev  allow-when-locked=true { spawn "playerctl" "previous"; }
     XF86AudioNext  allow-when-locked=true { spawn "playerctl" "next"; }
 
-    Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+Return hotkey-overlay-title="Open a Terminal" { spawn-sh "command -v kitty >/dev/null 2>&1 && exec kitty || exec alacritty"; }
     Mod+E      hotkey-overlay-title="Open File Manager"      { spawn "nautilus"; }
-    Mod+B      hotkey-overlay-title="Open Browser"           { spawn-sh "env MOZ_ENABLE_WAYLAND=0 /opt/zen-browser-bin/zen-bin"; }
-    Mod+P      repeat=false { spawn-sh "wl-mirror $(niri msg --json focused-output | jq -r .name)"; }
+    // MemoryHigh throttles, MemoryMax kills. Numbers are ~1.4x this machine's
+    // normal browser footprint, so a leaking tab dies inside its own scope
+    // instead of draining system swap and the page cache first.
+    Mod+B      hotkey-overlay-title="Open Browser"           { spawn-sh "exec systemd-run --user --scope -p MemoryHigh=3500M -p MemoryMax=4500M -- sh -c 'if [ -x /opt/zen-browser-bin/zen-bin ]; then exec env MOZ_ENABLE_WAYLAND=0 /opt/zen-browser-bin/zen-bin; else exec firefox; fi'"; }
+    Mod+P      repeat=false { spawn-sh "command -v wl-mirror >/dev/null 2>&1 && exec wl-mirror $(niri msg --json focused-output | jq -r .name) || exec niri msg action screenshot"; }
 
     Mod+O repeat=false { toggle-overview; }
     Mod+Q repeat=false { close-window; }
@@ -378,6 +383,7 @@ binds {
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
     Ctrl+Alt+Delete { quit; }
     Mod+Shift+P { power-off-monitors; }
+    Mod+Shift+B { spawn-sh "power-mode toggle"; }
 
     Mod+Shift+Ctrl+T { toggle-debug-tint; }
     Mod+Shift+Ctrl+O { debug-toggle-opaque-regions; }

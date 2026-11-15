@@ -1,7 +1,8 @@
 # AUR packages only.
 # Installed with: yay -S --needed - < packages/aur.txt
-yay
+yay-bin
 adw-gtk-theme-git
+tokyonight-gtk-theme-git
 matugen-bin
 wallust
 qt5ct-kde
@@ -9,12 +10,13 @@ qt6ct-kde
 wlogout
 gearlever
 otf-space-grotesk
-brave-bin
 zen-browser-bin
-visual-studio-code-bin
-spotify
-spicetify-cli
 moonlight-qt-bin
 onlyoffice-bin
 darkly-bin
 protonplus
+antigravity-ide
+claude-code
+figcraft-bin
+qdiskinfo
+r-quick-share-bin

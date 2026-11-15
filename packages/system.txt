@@ -1,0 +1,4 @@
+# System-level packages that system/install-system.sh depends on
+# (official repos only). Not part of a normal install unless --system is used.
+# Installed with: sudo pacman -S --needed - < packages/system.txt
+zram-generator

@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Terapkan kebijakan hardware untuk profil PPD tertentu.
+#   power-apply power-saver|balanced
+# Idempotent, aman dipanggil berulang.
+#
+# Catatan GPU:
+#   Di APU Picasso, pp_power_profile_mode hanya bisa ditulis saat
+#   power_dpm_force_performance_level=manual. Kita TIDAK memakai manual
+#   karena berisiko membuat iGPU tidak dinamis. Cukup set auto;
+#   ini sama dengan default TLP (RADEON_DPM_PERF_LEVEL_ON_BAT=auto).
+set -u
+
+PROFILE="${1:-balanced}"
+BOOST=/sys/devices/system/cpu/cpufreq/boost
+
+log() { logger -t power-apply -- "$*" 2>/dev/null || true; }
+
+gpu_set_auto() {
+  local f
+  for f in /sys/class/drm/card*/device/power_dpm_force_performance_level; do
+    [[ -w "$f" ]] || continue
+    if printf 'auto\n' > "$f" 2>/dev/null; then
+      log "gpu power_dpm_force_performance_level <- auto"
+    else
+      log "gpu power_dpm_force_performance_level gagal diset auto"
+    fi
+  done
+}
+
+wifi_iface() {
+  local d
+  for d in /sys/class/net/*/wireless; do
+    [[ -d "$d" ]] || continue
+    basename "$(dirname "$d")"
+    return 0
+  done
+  return 1
+}
+
+wifi_ps() {
+  # $1 = on|off
+  local iface
+  iface="$(wifi_iface)" || { log "wifi: interface tidak ditemukan"; return 0; }
+  if ! command -v iw >/dev/null 2>&1; then
+    log "wifi: iw tidak ada, power_save tidak diubah"
+    return 0
+  fi
+  if iw dev "$iface" set power_save "$1" >/dev/null 2>&1; then
+    log "wifi $iface power_save <- $1"
+  else
+    log "wifi $iface power_save gagal diset $1"
+  fi
+}
+
+case "$PROFILE" in
+  power-saver|power_saver|saver)
+    if [[ -w "$BOOST" ]]; then
+      printf '0\n' > "$BOOST" && log "boost OFF (max 2.1 GHz)"
+    fi
+    gpu_set_auto
+    wifi_ps on
+    ;;
+  balanced|performance|perf)
+    if [[ -w "$BOOST" ]]; then
+      printf '1\n' > "$BOOST" && log "boost ON (max 3.7 GHz)"
+    fi
+    gpu_set_auto
+    wifi_ps off
+    ;;
+  *)
+    log "profil tidak dikenal: $PROFILE"
+    exit 2
+    ;;
+esac

@@ -6,6 +6,7 @@
 #   ./install.sh --dry-run    # print what would happen, touch nothing
 #   ./install.sh --no-packages
 #   ./install.sh --force      # overwrite without asking
+#   ./install.sh --system     # also apply system/ (needs sudo, touches /etc)
 #
 # The repo layout maps 1:1 onto $HOME:
 #   config/      -> ~/.config/
@@ -20,14 +21,16 @@ BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
 
 DRY_RUN=0
 INSTALL_PACKAGES=1
+INSTALL_SYSTEM=0
 FORCE=0
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run)     DRY_RUN=1 ;;
     --no-packages) INSTALL_PACKAGES=0 ;;
+    --system)      INSTALL_SYSTEM=1 ;;
     --force)       FORCE=1 ;;
-    -h|--help)     sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help)     sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "unknown flag: $arg" >&2; exit 2 ;;
   esac
 done
@@ -70,6 +73,11 @@ if (( INSTALL_PACKAGES )); then
   mapfile -t apps < <(read_pkgs "$REPO_DIR/packages/apps.txt")
   if (( ${#apps[@]} )); then run sudo pacman -S --needed "${apps[@]}"; fi
 
+  if (( INSTALL_SYSTEM )); then
+    mapfile -t syspkgs < <(read_pkgs "$REPO_DIR/packages/system.txt")
+    if (( ${#syspkgs[@]} )); then run sudo pacman -S --needed "${syspkgs[@]}"; fi
+  fi
+
   if command -v yay >/dev/null 2>&1; then
     log "==> Packages (AUR)"
     mapfile -t aur < <(read_pkgs "$REPO_DIR/packages/aur.txt")
@@ -102,6 +110,11 @@ copy_tree "$REPO_DIR/config" "$HOME/.config"
 copy_tree "$REPO_DIR/home"   "$HOME"
 copy_tree "$REPO_DIR/state"  "$HOME/.local/state"
 copy_tree "$REPO_DIR/themes" "$HOME/.themes"
+
+if (( INSTALL_SYSTEM )); then
+  log "==> System layer"
+  run sudo "$REPO_DIR/system/install-system.sh"
+fi
 
 if [[ -d "$BACKUP_DIR" ]]; then
   log "==> Previous files backed up to $BACKUP_DIR"

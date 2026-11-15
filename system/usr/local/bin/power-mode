@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Lihat / ganti profil daya.
+#   power-mode            -> status
+#   power-mode status     -> status
+#   power-mode saver      -> power-saver
+#   power-mode balanced   -> balanced (performa penuh)
+#   power-mode toggle     -> ganti profil
+set -u
+
+IFACE=org.freedesktop.UPower.PowerProfiles
+OBJ=/org/freedesktop/UPower/PowerProfiles
+AC=/sys/class/power_supply/AC/online
+BOOST=/sys/devices/system/cpu/cpufreq/boost
+BAT=/sys/class/power_supply/BAT0
+
+get_profile() {
+  busctl --system get-property "$IFACE" "$OBJ" "$IFACE" ActiveProfile 2>/dev/null \
+    | sed -nE 's/^s "(.*)"$/\1/p'
+}
+
+set_profile() {
+  # Lewat Noctalia dulu supaya muncul OSD + widget langsung update.
+  if command -v noctalia >/dev/null 2>&1 && noctalia msg power-set "$1" >/dev/null 2>&1; then
+    return 0
+  fi
+  busctl --system set-property "$IFACE" "$OBJ" "$IFACE" ActiveProfile s "$1" >/dev/null 2>&1
+}
+
+status() {
+  local p ac boost cur max nominal ceiling ghz bat gpu wifi iface
+  p="$(get_profile)"
+  ac="$(cat "$AC" 2>/dev/null || echo '?')"
+  boost="$(cat "$BOOST" 2>/dev/null || echo '?')"
+  cur="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq 2>/dev/null || echo 0)"
+  max="$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq 2>/dev/null || echo 0)"
+  # acpi-cpufreq: scaling_max_freq = P0 nominal (2.1 GHz), boost di atasnya.
+  nominal="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq 2>/dev/null || echo 0)"
+  ceiling="$nominal"
+  [[ "$boost" == "1" ]] && ceiling="$max"
+  ghz="$(awk -v c="$cur" 'BEGIN{printf "%.2f", c/1000000}')"
+  bat="$(cat "$BAT/capacity" 2>/dev/null || echo '?')"
+  gpu="$(cat /sys/class/drm/card*/device/power_dpm_force_performance_level 2>/dev/null | head -1)"
+  gpu="${gpu:-tidak diketahui}"
+
+  wifi="tidak ada"
+  iface="$(for d in /sys/class/net/*/wireless; do [ -d "$d" ] && { basename "$(dirname "$d")"; break; }; done)"
+  if [[ -n "$iface" ]]; then
+    wifi="tidak diketahui"
+    if command -v iw >/dev/null 2>&1; then
+      wifi="$(iw dev "$iface" get power_save 2>/dev/null | sed 's/^[^:]*: //')"
+      wifi="${wifi:-tidak diketahui}"
+    fi
+  fi
+
+  printf 'Profil   : %s\n' "${p:-tidak diketahui}"
+  printf 'Sumber   : %s\n' "$([[ "$ac" == "1" ]] && echo 'AC (dicolok)' || echo 'Baterai')"
+  printf 'CPU      : %s GHz sekarang, batas %s GHz (boost=%s)\n' \
+    "$ghz" "$(awk -v m="$ceiling" 'BEGIN{printf "%.1f", m/1000000}')" "$boost"
+  printf 'GPU      : %s (driver amdgpu)\n' "$gpu"
+  printf 'WiFi     : power_save=%s\n' "$wifi"
+  printf 'Baterai  : %s%%\n' "$bat"
+
+  case "$p" in
+    power-saver)
+      printf 'Efek     : CPU boost OFF (maks 2.1 GHz semua core), WiFi PS ON\n' ;;
+    balanced|performance)
+      printf 'Efek     : CPU boost ON (3.7 GHz 1 core, ~3.0 GHz semua core), WiFi PS OFF\n' ;;
+  esac
+}
+
+case "${1:-status}" in
+  status)            status ;;
+  saver|power-saver)
+    [[ "$(cat "$AC" 2>/dev/null)" == "1" ]] && \
+      echo "Catatan: sedang dicolok, power-policy akan mengembalikan ke balanced." >&2
+    set_profile power-saver; sleep 1; status ;;
+  balanced|perf|performance) set_profile balanced; sleep 1; status ;;
+  toggle)
+    if [[ "$(get_profile)" == "power-saver" ]]; then
+      set_profile balanced
+    else
+      [[ "$(cat "$AC" 2>/dev/null)" == "1" ]] && \
+        echo "Catatan: sedang dicolok, power-policy akan mengembalikan ke balanced." >&2
+      set_profile power-saver
+    fi
+    sleep 1
+    status
+    ;;
+  *)
+    echo "Pemakaian: power-mode [status|saver|balanced|toggle]" >&2
+    exit 2
+    ;;
+esac
