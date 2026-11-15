@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Laporan kesehatan baterai + saran kalibrasi.
+set -u
+B=/sys/class/power_supply/BAT0
+DEV=/org/freedesktop/UPower/devices/battery_BAT0
+
+full=$(cat "$B/energy_full" 2>/dev/null || echo 0)
+design=$(cat "$B/energy_full_design" 2>/dev/null || echo 0)
+cycles=$(cat "$B/cycle_count" 2>/dev/null || echo '?')
+now=$(cat "$B/energy_now" 2>/dev/null || echo 0)
+pct=$(cat "$B/capacity" 2>/dev/null || echo '?')
+
+awk -v a="$full" -v b="$design" -v c="$cycles" -v n="$now" -v p="$pct" 'BEGIN{
+  if (b > 0) h = a / b * 100; else h = 0;
+  printf "Kapasitas sekarang : %.1f Wh (terisi %s%% = %.1f Wh)\n", a/1e6, p, n/1e6;
+  printf "Kapasitas desain   : %.1f Wh\n", b/1e6;
+  printf "Kesehatan dilaporkan: %.1f%%\n", h;
+  printf "Siklus             : %s\n", c;
+  print "";
+  if (h >= 95) print "Verdict: laporan BMS tampak terlalu bagus untuk sel 2019.";
+  else if (h >= 80) print "Verdict: masih wajar untuk mesin bekas.";
+  else print "Verdict: sel sudah menua, runtime tidak akan mencapai target.";
+}'
+
+echo
+echo "Catatan: angka ini dari BMS dan bisa sudah di-reset."
+echo "Untuk tahu kapasitas asli, lakukan 1 siklus kalibrasi:"
+echo "  1. Charge sampai 100% (matikan sementara threshold)."
+echo "  2. Pakai normal sampai 5%."
+echo "  3. Catat 'energy-full' setelah charge penuh lagi; bandingkan dengan desain."
+echo
+upower -i "$DEV" 2>/dev/null | grep -E 'energy-full|energy-full-design|charge-cycles|capacity' || true

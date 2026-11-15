@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Deteksi HP (MTP/PTP/AFC), mount lewat gvfs, lalu tampilkan path-nya.
+# Jalankan sebagai user biasa, BUKAN root.
+set -u
+
+if [[ ${EUID:-0} -eq 0 ]]; then
+  echo "Jalankan sebagai user biasa (tanpa sudo)." >&2
+  exit 1
+fi
+
+if ! command -v gio >/dev/null 2>&1; then
+  echo "gio tidak ditemukan. Pasang paket gvfs." >&2
+  exit 1
+fi
+
+mapfile -t URIS < <(
+  gio mount -li 2>/dev/null \
+    | sed -n 's/^[[:space:]]*activation_root=//p' \
+    | grep -E '^(mtp|gphoto2|afc)://' \
+    | sort -u
+)
+
+if (( ${#URIS[@]} == 0 )); then
+  # Fallback: cari URI mentah di output gio
+  mapfile -t URIS < <(
+    gio mount -li 2>/dev/null \
+      | grep -oE '(mtp|gphoto2|afc)://[^[:space:]]+' \
+      | sort -u
+  )
+fi
+
+if (( ${#URIS[@]} == 0 )); then
+  cat >&2 <<'EOF'
+Tidak ada HP terdeteksi.
+
+Periksa:
+  1. Kabel data (bukan kabel charge-only).
+  2. Di HP, pilih "File transfer" / "MTP", bukan "Charging only".
+  3. Buka kunci layar HP (MTP sering butuh layar tidak terkunci).
+  4. Coba cabut-colok ulang.
+  5. Cek kabel/port dengan: lsusb
+
+Kalau HP hanya muncul sebagai kamera (PTP), pasang gvfs-gphoto2.
+Kalau iPhone, jalankan setup-phone-transfer.sh --iphone.
+EOF
+  exit 1
+fi
+
+RC=0
+for uri in "${URIS[@]}"; do
+  echo "Mount: $uri"
+  gio mount "$uri" || RC=1
+done
+
+sleep 1
+
+mapfile -t MOUNTS < <(
+  find "/run/user/$(id -u)/gvfs" -maxdepth 1 -mindepth 1 -type d \
+    \( -name 'mtp:*' -o -name 'gphoto2:*' -o -name 'afc:*' \) 2>/dev/null \
+    | sort
+)
+
+if (( ${#MOUNTS[@]} == 0 )); then
+  echo
+  echo "Gagal mount. Cek detail dengan:" >&2
+  echo "  gio mount -li" >&2
+  echo "  journalctl --user -b | tail -40" >&2
+  exit 1
+fi
+
+echo
+for m in "${MOUNTS[@]}"; do
+  echo "Tersedia: $m"
+done
+
+LINK="$HOME/hp"
+if [[ -e "$LINK" && ! -L "$LINK" ]]; then
+  LINK="$HOME/hp-mtp"
+fi
+ln -sfn "${MOUNTS[0]}" "$LINK"
+
+echo
+echo "Symlink : $LINK -> ${MOUNTS[0]}"
+echo "Terminal: ls \"$LINK\""
+echo "Nautilus: nautilus \"$LINK\""
+echo
+echo "Untuk melepas: phone-umount"
+exit "$RC"

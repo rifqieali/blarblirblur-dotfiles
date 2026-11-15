@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Set batas charge baterai ThinkPad.
+#   battery-threshold              -> pakai /etc/battery-threshold.conf
+#   battery-threshold STOP START   -> override sekali jalan (tidak permanen)
+set -u
+
+CONF=/etc/battery-threshold.conf
+B=/sys/class/power_supply/BAT0
+
+STOP=85
+START=80
+if [[ -r $CONF ]]; then
+  # shellcheck source=/dev/null
+  . "$CONF"
+fi
+
+(( $# >= 1 )) && STOP=$1
+(( $# >= 2 )) && START=$2
+
+[[ -d $B ]] || { echo "BAT0 tidak ada" >&2; exit 1; }
+
+is_pct() { [[ $1 =~ ^[0-9]{1,3}$ ]] && (( 10#$1 >= 0 && 10#$1 <= 100 )); }
+is_pct "$STOP"  || { echo "STOP tidak valid: $STOP" >&2; exit 1; }
+is_pct "$START" || { echo "START tidak valid: $START" >&2; exit 1; }
+(( START < STOP )) || { echo "START ($START) harus lebih kecil dari STOP ($STOP)" >&2; exit 1; }
+
+cur_end=$(cat "$B/charge_control_end_threshold" 2>/dev/null || echo 100)
+
+# Driver menolak START > END. Kalau START baru sudah menabrak END yang
+# sekarang, naikkan END dulu; kalau tidak, turunkan START dulu.
+if (( START >= cur_end )); then
+  printf '%s\n' "$STOP"  > "$B/charge_control_end_threshold"
+  printf '%s\n' "$START" > "$B/charge_control_start_threshold"
+else
+  printf '%s\n' "$START" > "$B/charge_control_start_threshold"
+  printf '%s\n' "$STOP"  > "$B/charge_control_end_threshold"
+fi
+
+got_start=$(cat "$B/charge_control_start_threshold" 2>/dev/null || echo '?')
+got_end=$(cat "$B/charge_control_end_threshold" 2>/dev/null || echo '?')
+
+printf 'threshold: start=%s%% stop=%s%%\n' "$got_start" "$got_end"
+
+if [[ $got_start != "$START" || $got_end != "$STOP" ]]; then
+  echo "GAGAL: diminta start=$START stop=$STOP" >&2
+  exit 1
+fi

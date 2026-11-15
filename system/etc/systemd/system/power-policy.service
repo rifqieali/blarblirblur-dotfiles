@@ -1,0 +1,14 @@
+[Unit]
+Description=Terapkan kebijakan daya dari profil PPD
+After=power-profiles-daemon.service upower.service
+Wants=power-profiles-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/power-policy
+Restart=always
+RestartSec=2
+Nice=10
+
+[Install]
+WantedBy=graphical.target
