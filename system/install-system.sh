@@ -48,8 +48,8 @@ backup() {
   run cp -a "$dst" "$BACKUP_DIR/${dst#/}"
 }
 
-# --- 1. mirror system/{etc,usr} onto / --------------------------------------
-for tree in etc usr; do
+# --- 1. mirror system/{etc,usr,boot} onto / ---------------------------------
+for tree in etc usr boot; do
   [[ -d "$SYSTEM_DIR/$tree" ]] || continue
   while IFS= read -r -d '' src; do
     dst="/${src#"$SYSTEM_DIR"/}"
@@ -60,11 +60,30 @@ for tree in etc usr; do
   done < <(find "$SYSTEM_DIR/$tree" -type f -print0)
 done
 
-# --- 2. kernel cmdline ------------------------------------------------------
-# Arch has no /etc/default/grub.d, so tokens are appended to the existing
-# assignment instead of shipping a whole file: machine-specific settings
-# (GRUB_TIMEOUT, theme, saved default) stay exactly as they were.
+# --- 2. /etc/default/grub ---------------------------------------------------
+# Arch has no /etc/default/grub.d, so this file is never shipped whole: cmdline
+# tokens are appended and plain variables rewritten in place, leaving
+# machine-specific settings (GRUB_TIMEOUT, saved default) untouched.
 GRUB_DEFAULT=/etc/default/grub
+GRUB_CHANGED=0
+GRUB_BACKED=0
+
+grub_write() {  # stdin -> /etc/default/grub, backing up once
+  if (( DRY_RUN )); then
+    cat > /dev/null
+    return 0
+  fi
+  if (( ! GRUB_BACKED )); then
+    backup "$GRUB_DEFAULT"
+    GRUB_BACKED=1
+  fi
+  local tmp
+  tmp="$(mktemp)"
+  cat > "$tmp"
+  install -m 644 "$tmp" "$GRUB_DEFAULT"
+  rm -f "$tmp"
+}
+
 if [[ -f $GRUB_DEFAULT ]]; then
   mapfile -t wanted < <(grep -vE '^[[:space:]]*(#|$)' "$SYSTEM_DIR/grub-cmdline.conf" || true)
   current="$(sed -nE 's/^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$/\1/p' "$GRUB_DEFAULT")"
@@ -76,25 +95,44 @@ if [[ -f $GRUB_DEFAULT ]]; then
 
   if [[ -z $add ]]; then
     log "==> kernel cmdline sudah lengkap"
-  elif (( DRY_RUN )); then
-    log "==> [dry-run] GRUB_CMDLINE_LINUX_DEFAULT +=$add"
   else
     log "==> GRUB_CMDLINE_LINUX_DEFAULT +=$add"
-    backup "$GRUB_DEFAULT"
-    tmp="$(mktemp)"
+    GRUB_CHANGED=1
     awk -v val="$current$add" '
       /^GRUB_CMDLINE_LINUX_DEFAULT=/ && !done {
         printf "GRUB_CMDLINE_LINUX_DEFAULT=\"%s\"\n", val; done = 1; next
       }
       { print }
       END { if (!done) printf "GRUB_CMDLINE_LINUX_DEFAULT=\"%s\"\n", val }
-    ' "$GRUB_DEFAULT" > "$tmp"
-    install -m 644 "$tmp" "$GRUB_DEFAULT"
-    rm -f "$tmp"
+    ' "$GRUB_DEFAULT" | grub_write
+  fi
+
+  if [[ -f "$SYSTEM_DIR/grub-settings.conf" ]]; then
+    while IFS= read -r line; do
+      [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+      key="${line%%=*}"
+      val="${line#*=}"
+      val="${val#\"}"; val="${val%\"}"
+      now="$(sed -nE "s/^${key}=\"?([^\"]*)\"?\$/\1/p" "$GRUB_DEFAULT" | head -1)"
+      if [[ $now == "$val" ]]; then
+        log "==> $key sudah benar"
+        continue
+      fi
+      log "==> $key: ${now:-(belum ada)} -> $val"
+      GRUB_CHANGED=1
+      awk -v k="$key" -v v="$val" '
+        index($0, k "=") == 1 { printf "%s=\"%s\"\n", k, v; found = 1; next }
+        { print }
+        END { if (!found) printf "%s=\"%s\"\n", k, v }
+      ' "$GRUB_DEFAULT" | grub_write
+    done < "$SYSTEM_DIR/grub-settings.conf"
+  fi
+
+  if (( GRUB_CHANGED )); then
     run grub-mkconfig -o /boot/grub/grub.cfg
   fi
 else
-  log "!! /etc/default/grub tidak ada — kernel cmdline dilewati"
+  log "!! /etc/default/grub tidak ada — konfigurasi GRUB dilewati"
 fi
 
 # --- 3. live reload ---------------------------------------------------------
@@ -115,6 +153,12 @@ elif [[ -d $SYSTEM_DIR/etc/systemd ]]; then
   log "==> zram: ukuran baru berlaku setelah reboot (atau --resize-zram)"
 fi
 
+# SDDM reads its config and theme at startup. Restarting it would kill the
+# running session, so this is deliberately a note, not an action.
+if [[ -d "$SYSTEM_DIR/etc/sddm.conf.d" ]]; then
+  log "==> SDDM: config/tema dipakai saat SDDM start berikutnya (logout/reboot)"
+fi
+
 if [[ -d $BACKUP_DIR ]]; then
   log "==> File lama dibackup ke $BACKUP_DIR"
 fi
@@ -122,8 +166,9 @@ fi
 cat <<'EOF'
 
 ==> Selesai. Sisa langkah manual:
-  1. Reboot untuk kernel cmdline (transparent_hugepage=madvise).
+  1. Reboot untuk kernel cmdline + tema GRUB (transparent_hugepage=madvise).
      Cek setelahnya: cat /sys/kernel/mm/transparent_hugepage/enabled
   2. Cek zram: zramctl  (DISKSIZE harus ~75% RAM)
   3. Cek unit: systemctl status power-policy battery-threshold
+  4. Tema SDDM dipakai setelah logout/reboot berikutnya.
 EOF
