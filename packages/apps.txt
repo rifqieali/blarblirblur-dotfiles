@@ -1,5 +1,6 @@
 # Day-to-day applications used on this machine (official repos only).
 firefox
+zed
 mpv
 mpv-mpris
 neovim
@@ -8,3 +9,7 @@ inkscape
 discord
 steam
 steam-devices
+gthumb
+obs-studio
+mousepad
+kdiskmark
