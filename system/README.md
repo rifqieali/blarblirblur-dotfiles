@@ -12,15 +12,20 @@ been lost on a reinstall.
 | Path in repo | Lands at |
 | --- | --- |
 | `system/usr/local/bin/` | `/usr/local/bin/` |
+| `system/usr/share/sddm/themes/silent/` | `/usr/share/sddm/themes/silent/` |
+| `system/boot/grub/themes/fox/` | `/boot/grub/themes/fox/` |
+| `system/etc/sddm.conf.d/` | `/etc/sddm.conf.d/` |
+| `system/etc/grub.d/` | `/etc/grub.d/` |
 | `system/etc/systemd/system/` | `/etc/systemd/system/` |
 | `system/etc/systemd/zram-generator.conf` | `/etc/systemd/zram-generator.conf` |
 | `system/etc/udev/rules.d/` | `/etc/udev/rules.d/` |
 | `system/etc/sysctl.d/` | `/etc/sysctl.d/` |
 | `system/etc/*.conf` | `/etc/` |
 
-`grub-cmdline.conf` is the exception: Arch has no `/etc/default/grub.d`, so
-`install-system.sh` appends the tokens to the existing
-`GRUB_CMDLINE_LINUX_DEFAULT` instead of shipping the whole file.
+Two files are not mirrored: `grub-cmdline.conf` (kernel parameters to append)
+and `grub-settings.conf` (plain `/etc/default/grub` variables to rewrite).
+Arch has no `/etc/default/grub.d`, so `install-system.sh` edits the existing
+file in place instead of shipping it whole.
 
 ## Apply
 
@@ -48,6 +53,9 @@ first and backed up to `/var/backups/dotfiles-system-<timestamp>/`.
   mount; it only asks systemd for the unit, because systemd 262 sandboxes
   udev away from mount(2).
 - **Sysctl**: `99-power-savings.conf` disables the NMI watchdog.
+- **Boot / login theming**: `boot/grub/themes/fox` + `GRUB_THEME`/`GRUB_GFXMODE`
+  in `grub-settings.conf`, the `42_persona_velvet_room` firmware entry, and the
+  Silent SDDM theme driven by `etc/sddm.conf.d/10-silent.conf`.
 
 ## Machine-specific values
 
@@ -55,3 +63,18 @@ first and backed up to `/var/backups/dotfiles-system-<timestamp>/`.
 `etc/battery-threshold.conf` assumes a ThinkPad charge window. Both are safe
 no-ops elsewhere (the UUID simply never matches, the unit is skipped when
 `BAT0` is absent), but check them on a new machine.
+
+## Vendored themes
+
+- **SDDM — Silent** v1.5.0, from [uiriansan/SilentSDDM](https://github.com/uiriansan/SilentSDDM),
+  GPL-3.0-or-later (see `system/usr/share/sddm/themes/silent/LICENSE`).
+  Vendored as runtime files only: `docs/`, `nix/`, `flake.*` and the upstream
+  `install.sh` were dropped, which is 22 MB -> 17 MB. The active preset is
+  `configs/rei.conf` (set in `metadata.desktop`); the other backgrounds ship
+  with it so the presets keep working.
+- **GRUB — fox**, 4.1 MB, installed by the "Persona GRUB Themes" script
+  (`install.py`). Only the theme in use is vendored; the other seven in
+  `/boot/grub/themes` are not.
+
+Both are binaries committed on purpose: they are small enough to be worth it,
+unlike `~/.icons` (≈660 MB), which stays a package problem.

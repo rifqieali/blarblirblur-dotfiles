@@ -1,0 +1,9 @@
+#!/bin/sh
+# Added by Persona GRUB Themes (install.py --velvet-room). Remove with install.py --uninstall.
+cat << 'EOF'
+if [ "$grub_platform" = "efi" ]; then
+  menuentry 'Velvet Room (UEFI Firmware Settings)' --class velvet --id persona-velvet-room {
+    fwsetup
+  }
+fi
+EOF
