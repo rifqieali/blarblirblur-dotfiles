@@ -11,6 +11,7 @@ Layout mirrors `$HOME` so restoring is a copy, not a puzzle:
 | `home/` | `~/` (`.zshrc`, `.zshenv`, `.zprofile`, `.gitconfig`, `.Xresources`) |
 | `state/` | `~/.local/state/` (Noctalia `settings.toml`, `state.toml`, `wallpaper_shuffle.json`) |
 | `themes/` | `~/.themes/` |
+| `system/` | `/` — the small system layer (see `system/README.md`) |
 
 ## What's inside
 
@@ -22,6 +23,8 @@ Layout mirrors `$HOME` so restoring is a copy, not a puzzle:
 - **Shell + git**: `home/.zshrc` and friends (oh-my-zsh based)
 - **AI tooling**: `config/opencode/` (no `node_modules`)
 - `config/systemd/user/hermes-gateway.service` (paths use the `%h` specifier)
+- **System layer**: `system/` — zram/THP memory tuning, the power-policy
+  daemon, battery threshold, USB automount, and their systemd units
 
 Verified before every push: no credentials, no history, no machine state.
 
@@ -41,16 +44,22 @@ git clone <this-repo-url> ~/dotfiles
 cd ~/dotfiles
 ./install.sh --dry-run     # see exactly what would be touched
 ./install.sh               # packages, then configs (prompts before overwriting)
+./install.sh --system      # same, plus system/ (asks for sudo)
 ```
 
 `install.sh` prompts before overwriting when interactive; otherwise it backs
-up to `~/.dotfiles-backup-<ts>` and overwrites. Flags: `--dry-run`, `--no-packages`, `--force`.
+up to `~/.dotfiles-backup-<ts>` and overwrites. Flags: `--dry-run`, `--no-packages`, `--force`, `--system`.
+
+`install.sh` never touches anything outside `$HOME`. `--system` hands that
+half to `system/install-system.sh`, which backs up to
+`/var/backups/dotfiles-system-<ts>/` and is dry-runnable on its own.
 
 Package sets are curated, not a dump of `pacman -Qqe`:
 
 - `packages/niri-core.txt` — the rice itself (official repos)
 - `packages/apps.txt` — daily apps (official repos)
 - `packages/aur.txt` — AUR only: `yay -S --needed - < packages/aur.txt`
+- `packages/system.txt` — only needed with `--system`
 
 ## After install (manual, by design)
 
@@ -76,6 +85,13 @@ Package sets are curated, not a dump of `pacman -Qqe`:
 - Make sure `codebase-memory-mcp` is on `PATH` — `config/opencode/` calls it by name.
 - Point the Noctalia wallpaper directory (`config/noctalia/config.toml`) at your
   own folder if `~/Pictures/Wallpapers` is not where yours live.
+
+## Credits
+
+- [RanXom/glassy-niri](https://github.com/RanXom/glassy-niri) — asal ide
+  blur/glass dan struktur keybind Niri yang jadi dasar `config/niri/config.kdl`.
+  Repo ini adalah adaptasi untuk satu panel laptop + Noctalia v5, bukan karya
+  orisinal untuk bagian tata letaknya.
 
 ## Deliberately excluded
 

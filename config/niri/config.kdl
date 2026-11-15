@@ -1,4 +1,5 @@
-// Glassy-niri (Noctalia v5) — adaptasi RanXom/glassy-niri untuk eDP-1 1920x1080 (laptop, single panel).
+// Glassy-niri (Noctalia v5) — adaptasi https://github.com/RanXom/glassy-niri
+// untuk eDP-1 1920x1080 (laptop, single panel).
 // Keybind dipertahankan; aksi shell diarahkan ke Noctalia v5.
 
 prefer-no-csd
