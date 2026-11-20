@@ -18,6 +18,7 @@ log() { printf '%s %s %s: %s\n' "$(date '+%F %T')" "${ACTION:-?}" "${DEV:-?}" "$
 : "${USER_GID:=1000}"
 : "${USB_BASE:=/mnt/usb}"
 : "${EXTERNAL_BASE:=/mnt/eksternal}"
+: "${SD_BASE:=/mnt/sd}"
 : "${FLASH_MAX_GB:=256}"
 : "${EXTERNAL_MIN_GB:=128}"
 : "${EKSTERNAL_UUIDS:=}"
@@ -34,7 +35,7 @@ list_has() {
   return 1
 }
 
-mkdir -p "$STATE" "$USB_BASE" "$EXTERNAL_BASE"
+mkdir -p "$STATE" "$USB_BASE" "$EXTERNAL_BASE" "$SD_BASE"
 touch "$LOG" 2>/dev/null || true
 
 DEVNAME="$(basename "$DEV")"
@@ -52,9 +53,11 @@ if [[ "$ACTION" == "add" ]]; then
   fi
 
   PROPS="$(udevadm info --query=property --name "$DEV" 2>/dev/null || true)"
-  if ! grep -qE '^ID_PATH=.*usb|^ID_USB_DRIVER=' <<<"$PROPS"; then
-    log "bukan perangkat USB, dilewati"
-    exit 0
+  if ! grep -qE '^ID_PATH=.*(usb|mmc)|^ID_USB_DRIVER=' <<<"$PROPS"; then
+    case "$DEVNAME" in
+      mmcblk*) ;;  # slot microSD bawaan: ID_PATH-nya pci/platform
+      *) log "bukan perangkat USB/SD, dilewati"; exit 0 ;;
+    esac
   fi
 
   FS="$(blkid -o value -s TYPE "$DEV" 2>/dev/null || true)"
@@ -93,6 +96,8 @@ if [[ "$ACTION" == "add" ]]; then
     BASE="$EXTERNAL_BASE"
   elif [[ -n "$UUID" ]] && list_has "$UUID" $USB_UUIDS; then
     BASE="$USB_BASE"
+  elif [[ "$DEVNAME" == mmcblk* ]]; then
+    BASE="$SD_BASE"
   elif [[ "$REMOVABLE" == "1" && "$SIZE_GB" -lt "$FLASH_MAX_GB" ]]; then
     BASE="$USB_BASE"
   elif [[ "$ROTA" == "1" ]]; then
@@ -213,7 +218,7 @@ if [[ "$ACTION" == "remove" ]]; then
 
   rm -f "$STATE/$DEVNAME"
   case "$MP" in
-    "$USB_BASE"/*|"$EXTERNAL_BASE"/*) rmdir "$MP" 2>/dev/null || true ;;
+    "$USB_BASE"/*|"$EXTERNAL_BASE"/*|"$SD_BASE"/*) rmdir "$MP" 2>/dev/null || true ;;
   esac
   exit 0
 fi

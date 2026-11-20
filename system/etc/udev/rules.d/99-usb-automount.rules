@@ -1,7 +1,10 @@
 # USB flash          -> /mnt/usb
 # USB HDD/SSD        -> /mnt/eksternal
+# microSD (slot)     -> /mnt/sd
 #
 # udev TIDAK melakukan mount (sandbox systemd 262 melarang mount).
 # udev hanya meminta systemd menjalankan usb-automount@<dev>.service.
 # BindsTo=dev-%i.device pada unit membuat unmount otomatis saat dicabut.
 ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_FS_TYPE}!="", ENV{ID_PATH}=="*usb*", ENV{UDISKS_AUTO}="0", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb-automount@%k.service"
+# Slot microSD bawaan (mmcblk) — ID_PATH-nya pci/platform, bukan usb.
+ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_FS_TYPE}!="", KERNEL=="mmcblk[0-9]*p[0-9]*", ENV{UDISKS_AUTO}="0", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb-automount@%k.service"
